@@ -28,6 +28,13 @@ import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { CHART_DATA, MOCK_NOTIFICATIONS, MOCK_ORDERS, B2B_PRODUCTS, CONSUMER_PRODUCTS } from './constants';
 import { UserProfile, UserRole } from './types';
 
+// ------------------------------------------------------------------
+// 📢 لتغيير اللوجو: ضع رابط الصورة الخاصة بك هنا بين علامتي التنصيص
+// مثال: "https://i.imgur.com/my-logo.png"
+// إذا تركتها فارغة "" سيظهر اللوجو الافتراضي المرسوم
+const LOGO_URL = "https://drive.google.com/file/d/1gXr2DqifSR2c8YN_vwNzv79doTxzKKkj/view?usp=sharing"; 
+// ------------------------------------------------------------------
+
 // --- SVGs for Custom Icons ---
 const CustomIcons = {
   Sugar: () => (
@@ -57,21 +64,27 @@ const CustomIcons = {
   ),
   Logo: () => (
     <div className="flex flex-col items-center justify-center">
-       <div className="relative">
-          <div className="bg-green-600 text-white p-3 rounded-t-lg w-16 h-10 flex items-center justify-center mx-auto shadow-lg relative z-10">
-            <div className="w-full h-full border-b-2 border-white/20 flex gap-1 justify-center items-end pb-1">
-                 <div className="w-1 h-4 bg-white/50 rounded-full"></div>
-                 <div className="w-1 h-4 bg-white/50 rounded-full"></div>
-                 <div className="w-1 h-4 bg-white/50 rounded-full"></div>
+       {LOGO_URL ? (
+         // إذا كان هناك رابط صورة، استخدمه
+         <img src={LOGO_URL} alt="Logo" className="w-32 h-auto object-contain mb-2" />
+       ) : (
+         // إذا لم يكن هناك رابط، استخدم اللوجو المرسوم
+         <div className="relative">
+            <div className="bg-green-600 text-white p-3 rounded-t-lg w-16 h-10 flex items-center justify-center mx-auto shadow-lg relative z-10">
+              <div className="w-full h-full border-b-2 border-white/20 flex gap-1 justify-center items-end pb-1">
+                   <div className="w-1 h-4 bg-white/50 rounded-full"></div>
+                   <div className="w-1 h-4 bg-white/50 rounded-full"></div>
+                   <div className="w-1 h-4 bg-white/50 rounded-full"></div>
+              </div>
             </div>
-          </div>
-          <div className="w-14 h-10 border-4 border-green-800 rounded-b-xl mx-auto -mt-1 bg-white relative z-0 flex items-center justify-center">
-             <div className="flex gap-1">
-                 <div className="w-0.5 h-4 bg-green-800 rotate-12"></div>
-                 <div className="w-0.5 h-4 bg-green-800 -rotate-12"></div>
-             </div>
-          </div>
-       </div>
+            <div className="w-14 h-10 border-4 border-green-800 rounded-b-xl mx-auto -mt-1 bg-white relative z-0 flex items-center justify-center">
+               <div className="flex gap-1">
+                   <div className="w-0.5 h-4 bg-green-800 rotate-12"></div>
+                   <div className="w-0.5 h-4 bg-green-800 -rotate-12"></div>
+               </div>
+            </div>
+         </div>
+       )}
        <h1 className="text-4xl font-extrabold text-green-800 mt-2 tracking-tighter">محـلّـي</h1>
     </div>
   )
