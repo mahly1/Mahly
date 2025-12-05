@@ -24,7 +24,10 @@ import {
   Users,
   Calendar,
   AlertCircle,
-  KeyRound
+  KeyRound,
+  Edit2,
+  Save,
+  X
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { CHART_DATA, MOCK_NOTIFICATIONS, MOCK_ORDERS, B2B_PRODUCTS, CONSUMER_PRODUCTS } from './constants';
@@ -1203,88 +1206,227 @@ const InvoicesPage = () => {
   );
 };
 
-const ProfilePlaceholder = ({ user, onLogout }: { user: UserProfile, onLogout: () => void }) => (
-    <div className="min-h-screen bg-gray-50 p-6 pb-24">
-        <div className="bg-white rounded-2xl shadow p-6 text-center mt-6">
-            <h1 className="text-2xl font-bold mb-6 text-gray-800">الملف الشخصي</h1>
-            <div className="w-24 h-24 bg-green-800 text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 border-4 border-green-100">
-                {user.name.charAt(0)}
+const ProfilePage = ({ 
+  user, 
+  onLogout,
+  onUpdate
+}: { 
+  user: UserProfile, 
+  onLogout: () => void,
+  onUpdate: (updatedUser: UserProfile) => void 
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState(user);
+
+  useEffect(() => {
+    setFormData(user);
+  }, [user, isEditing]);
+
+  const handleChange = (field: keyof UserProfile, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = () => {
+    // 1. Get Users DB
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    // 2. Find Index (Using original user data to find, in case phone changed)
+    const index = users.findIndex((u: UserProfile) => u.phone === user.phone && u.role === user.role);
+    
+    if (index !== -1) {
+        // 3. Update Record
+        const updatedUser = { ...users[index], ...formData };
+        users[index] = updatedUser;
+        
+        // 4. Save to DB
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        
+        // 5. Update parent state
+        onUpdate(updatedUser);
+        setIsEditing(false);
+    }
+  };
+
+  const ActionButton = ({ onClick, icon: Icon, className }: any) => (
+    <button 
+      onClick={onClick}
+      className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${className}`}
+    >
+      <Icon className="w-6 h-6" />
+    </button>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Header with Edit Toggle */}
+      <div className="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-sm shadow-sm z-[100] flex items-center px-4 max-w-md mx-auto justify-between">
+         <div className="w-10"></div> {/* Spacer */}
+         <h1 className="text-lg font-bold text-gray-900">{isEditing ? 'تعديل الملف الشخصي' : 'الملف الشخصي'}</h1>
+         <div className="w-10 flex justify-end">
+            {isEditing ? (
+              <ActionButton onClick={() => setIsEditing(false)} icon={X} className="text-red-500" />
+            ) : (
+              <ActionButton onClick={() => setIsEditing(true)} icon={Edit2} className="text-green-700" />
+            )}
+         </div>
+      </div>
+
+      <div className="p-6 pt-24">
+        <div className="bg-white rounded-2xl shadow p-6 text-center">
+            {/* Avatar */}
+            <div className="w-24 h-24 bg-green-800 text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 border-4 border-green-100 relative">
+                {formData.name.charAt(0)}
+                {isEditing && (
+                  <div className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-md border border-gray-100">
+                    <Camera className="w-4 h-4 text-gray-600" />
+                  </div>
+                )}
             </div>
             
             <div className="text-right space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                        <User className="w-4 h-4 text-green-600" />
-                        <span className="text-gray-500 text-xs">الاسم</span>
-                    </div>
-                    <span className="font-bold text-gray-900 mr-6 block">{user.name}</span>
-                </div>
-                
-                <div className="border-b border-gray-100 pb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-green-600 text-xs">📞</span>
-                        <span className="text-gray-500 text-xs">الهاتف</span>
-                    </div>
-                    <span className="font-bold text-gray-900 mr-6 block">{user.phone}</span>
-                </div>
+                {isEditing ? (
+                  // --- EDIT MODE FORM ---
+                  <div className="space-y-4">
+                     <InputField 
+                       label="الاسم الكامل" 
+                       value={formData.name} 
+                       onChange={(e: any) => handleChange('name', e.target.value)} 
+                       icon={User}
+                     />
+                     <InputField 
+                       label="رقم الهاتف" 
+                       value={formData.phone} 
+                       onChange={(e: any) => handleChange('phone', e.target.value)} 
+                       icon={() => <span>📞</span>}
+                     />
+                     <InputField 
+                       label="كلمة المرور" 
+                       value={formData.password} 
+                       type="text" // Visible for editing ease, or password if preferred
+                       onChange={(e: any) => handleChange('password', e.target.value)} 
+                       icon={KeyRound}
+                     />
+                     
+                     {user.role === 'MERCHANT' && (
+                       <>
+                         <InputField 
+                           label="اسم المحل" 
+                           value={formData.shopName} 
+                           onChange={(e: any) => handleChange('shopName', e.target.value)} 
+                           icon={Store}
+                         />
+                         <InputField 
+                           label="العنوان" 
+                           value={formData.address} 
+                           onChange={(e: any) => handleChange('address', e.target.value)} 
+                           icon={MapPin}
+                         />
+                         <div className="grid grid-cols-2 gap-2">
+                            <InputField 
+                              label="السن" 
+                              value={formData.age} 
+                              onChange={(e: any) => handleChange('age', e.target.value)} 
+                              type="number"
+                            />
+                            <InputField 
+                              label="عدد العمال" 
+                              value={formData.workerCount} 
+                              onChange={(e: any) => handleChange('workerCount', e.target.value)} 
+                              type="number"
+                            />
+                         </div>
+                       </>
+                     )}
+                     
+                     {user.role === 'CONSUMER' && (
+                         <div className="grid grid-cols-1 gap-2">
+                             {/* Add Address field support for Consumers if desired in future */}
+                         </div>
+                     )}
 
-                {user.role === 'MERCHANT' && (
+                     <Button fullWidth onClick={handleSave} className="mt-4 gap-2">
+                       <Save className="w-5 h-5" /> حفظ التغييرات
+                     </Button>
+                  </div>
+                ) : (
+                  // --- VIEW MODE ---
                   <>
                     <div className="border-b border-gray-100 pb-3">
                         <div className="flex items-center gap-2 mb-1">
-                            <Store className="w-4 h-4 text-green-600" />
-                            <span className="text-gray-500 text-xs">اسم المحل</span>
+                            <User className="w-4 h-4 text-green-600" />
+                            <span className="text-gray-500 text-xs">الاسم</span>
                         </div>
-                        <span className="font-bold text-gray-900 mr-6 block">{user.shopName}</span>
+                        <span className="font-bold text-gray-900 mr-6 block">{user.name}</span>
                     </div>
                     
-                    {user.workerCount && (
-                      <div className="border-b border-gray-100 pb-3">
-                          <div className="flex items-center gap-2 mb-1">
-                              <Users className="w-4 h-4 text-green-600" />
-                              <span className="text-gray-500 text-xs">عدد العاملين</span>
-                          </div>
-                          <span className="font-bold text-gray-900 mr-6 block">{user.workerCount}</span>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {user.address && (
                     <div className="border-b border-gray-100 pb-3">
                         <div className="flex items-center gap-2 mb-1">
-                            <MapPin className="w-4 h-4 text-green-600" />
-                            <span className="text-gray-500 text-xs">العنوان</span>
+                            <span className="text-green-600 text-xs">📞</span>
+                            <span className="text-gray-500 text-xs">الهاتف</span>
                         </div>
-                        <span className="font-bold text-gray-900 mr-6 block">{user.address}</span>
+                        <span className="font-bold text-gray-900 mr-6 block">{user.phone}</span>
                     </div>
-                )}
-                
-                {user.age && (
-                  <div className="border-b border-gray-100 pb-3">
-                       <div className="flex items-center gap-2 mb-1">
-                           <Calendar className="w-4 h-4 text-green-600" />
-                           <span className="text-gray-500 text-xs">السن</span>
-                       </div>
-                       <span className="font-bold text-gray-900 mr-6 block">{user.age} سنة</span>
-                  </div>
-                )}
 
-                <div className="pb-2">
-                    <span className="text-gray-500 block text-xs mb-1 mr-6">نوع الحساب</span>
-                    <span className="font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full text-sm inline-block mr-6">
-                      {user.role === 'MERCHANT' ? 'تاجر' : 'مستهلك'}
-                    </span>
-                </div>
+                    {user.role === 'MERCHANT' && (
+                      <>
+                        <div className="border-b border-gray-100 pb-3">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Store className="w-4 h-4 text-green-600" />
+                                <span className="text-gray-500 text-xs">اسم المحل</span>
+                            </div>
+                            <span className="font-bold text-gray-900 mr-6 block">{user.shopName}</span>
+                        </div>
+                        
+                        {user.workerCount && (
+                          <div className="border-b border-gray-100 pb-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                  <Users className="w-4 h-4 text-green-600" />
+                                  <span className="text-gray-500 text-xs">عدد العاملين</span>
+                              </div>
+                              <span className="font-bold text-gray-900 mr-6 block">{user.workerCount}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {user.address && (
+                        <div className="border-b border-gray-100 pb-3">
+                            <div className="flex items-center gap-2 mb-1">
+                                <MapPin className="w-4 h-4 text-green-600" />
+                                <span className="text-gray-500 text-xs">العنوان</span>
+                            </div>
+                            <span className="font-bold text-gray-900 mr-6 block">{user.address}</span>
+                        </div>
+                    )}
+                    
+                    {user.age && (
+                      <div className="border-b border-gray-100 pb-3">
+                          <div className="flex items-center gap-2 mb-1">
+                              <Calendar className="w-4 h-4 text-green-600" />
+                              <span className="text-gray-500 text-xs">السن</span>
+                          </div>
+                          <span className="font-bold text-gray-900 mr-6 block">{user.age} سنة</span>
+                      </div>
+                    )}
+
+                    <div className="pb-2">
+                        <span className="text-gray-500 block text-xs mb-1 mr-6">نوع الحساب</span>
+                        <span className="font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full text-sm inline-block mr-6">
+                          {user.role === 'MERCHANT' ? 'تاجر' : 'مستهلك'}
+                        </span>
+                    </div>
+
+                    <Button variant="outline" fullWidth className="mt-8 text-red-600 border-red-200 hover:bg-red-50" onClick={onLogout}>
+                        <LogOut className="w-4 h-4" /> تسجيل الخروج
+                    </Button>
+                  </>
+                )}
             </div>
-
-            <Button variant="outline" fullWidth className="mt-8 text-red-600 border-red-200 hover:bg-red-50" onClick={onLogout}>
-                <LogOut className="w-4 h-4" /> تسجيل الخروج
-            </Button>
         </div>
-        <BottomNav userRole={user.role} />
+      </div>
+      <BottomNav userRole={user.role} />
     </div>
-);
+  );
+};
 
 const Splash = () => {
   const navigate = useNavigate();
@@ -1342,6 +1484,12 @@ const App = () => {
       navigate('/home');
   };
 
+  const handleUpdateUser = (updatedUser: UserProfile) => {
+      // Update session storage and state
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(updatedUser));
+      setUser(updatedUser);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
     setUser(null);
@@ -1363,7 +1511,9 @@ const App = () => {
 
         {/* Portal & Shared */}
         <Route path="/home" element={user ? <HomePortal user={user} /> : <Navigate to="/auth-start" />} />
-        <Route path="/profile" element={user ? <ProfilePlaceholder user={user} onLogout={handleLogout} /> : <Navigate to="/auth-start" />} />
+        
+        {/* Updated Profile Route with onUpdate */}
+        <Route path="/profile" element={user ? <ProfilePage user={user} onLogout={handleLogout} onUpdate={handleUpdateUser} /> : <Navigate to="/auth-start" />} />
 
         {/* Merchant Routes */}
         <Route path="/merchant/dashboard" element={user && user.role === 'MERCHANT' ? <MerchantDashboard user={user} /> : <Navigate to="/home" />} />
