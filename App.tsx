@@ -32,7 +32,7 @@ import { UserProfile, UserRole } from './types';
 // 📢 لتغيير اللوجو: ضع رابط الصورة الخاصة بك هنا بين علامتي التنصيص
 // مثال: "https://i.imgur.com/my-logo.png"
 // إذا تركتها فارغة "" سيظهر اللوجو الافتراضي المرسوم
-const LOGO_URL = "https://drive.google.com/file/d/1gXr2DqifSR2c8YN_vwNzv79doTxzKKkj/view?usp=sharing"; 
+const LOGO_URL = "https://ibb.co/BVFKTFB2"; 
 // ------------------------------------------------------------------
 
 // --- SVGs for Custom Icons ---
