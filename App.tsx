@@ -22,7 +22,8 @@ import {
   FileText,
   Truck,
   Users,
-  Calendar
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { CHART_DATA, MOCK_NOTIFICATIONS, MOCK_ORDERS, B2B_PRODUCTS, CONSUMER_PRODUCTS } from './constants';
@@ -34,6 +35,11 @@ import { UserProfile, UserRole } from './types';
 // إذا تركتها فارغة "" سيظهر اللوجو الافتراضي المرسوم
 const LOGO_URL = "https://i.ibb.co/6RLJDLF0/Asset-1.png"; 
 // ------------------------------------------------------------------
+
+const STORAGE_KEYS = {
+  USERS: 'mahalli_users_db',
+  ACTIVE_SESSION: 'mahalli_active_session'
+};
 
 // --- SVGs for Custom Icons ---
 const CustomIcons = {
@@ -191,31 +197,30 @@ const AuthStart = () => {
 
 const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
   const [role, setRole] = useState<UserRole | null>(null);
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !role) return;
+    setError('');
     
-    // Create a mock user
-    const mockUser: UserProfile = role === 'MERCHANT' ? {
-      name: 'تاجر محلي',
-      phone: email,
-      role: 'MERCHANT',
-      shopName: 'سوبر ماركت (تجريبي)',
-      address: 'القاهرة، مصر',
-      age: '35',
-      workerCount: '3'
-    } : {
-      name: 'مستخدم محلي',
-      phone: email,
-      role: 'CONSUMER',
-      address: 'القاهرة، مصر',
-      age: '28'
-    };
-    onLogin(mockUser);
+    // Get stored users
+    const storedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    
+    // Find matching user
+    const user = storedUsers.find((u: UserProfile) => 
+      u.phone === phone && 
+      u.password === password && 
+      u.role === role
+    );
+
+    if (user) {
+      onLogin(user);
+    } else {
+      setError('رقم الهاتف أو كلمة المرور غير صحيحة');
+    }
   };
 
   if (!role) {
@@ -269,12 +274,20 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">تسجيل دخول {role === 'MERCHANT' ? 'التاجر' : 'المستهلك'}</h2>
         
         <form onSubmit={handleLogin} className="w-full max-w-sm space-y-2">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg flex items-center gap-2 text-sm mb-4 font-bold border border-red-100">
+              <AlertCircle className="w-5 h-5" />
+              {error}
+            </div>
+          )}
+
           <InputField 
-            label="البريد الإلكتروني / رقم الهاتف" 
-            value={email}
-            onChange={(e: any) => setEmail(e.target.value)}
+            label="رقم الهاتف" 
+            value={phone}
+            onChange={(e: any) => setPhone(e.target.value)}
             required 
-            icon={User} 
+            type="tel"
+            icon={() => <span>📞</span>}
           />
           <InputField 
             label="كلمة المرور" 
@@ -285,7 +298,7 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
             icon={() => <span className="absolute right-3 top-3.5 text-gray-400 text-xs">🔒</span>} 
           />
           <div className="pt-4">
-            <Button fullWidth disabled={!email || !password}>دخول</Button>
+            <Button fullWidth disabled={!phone || !password}>دخول</Button>
           </div>
         </form>
       </div>
@@ -331,10 +344,36 @@ const RoleSelection = () => {
 
 const RegisterMerchant = ({ onRegister }: { onRegister: (data: UserProfile) => void }) => {
   const [formData, setFormData] = useState<Partial<UserProfile>>({ role: 'MERCHANT' });
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (field: keyof UserProfile, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Basic Validation
+    if (!formData.name || !formData.shopName || !formData.phone || !formData.password) {
+      setError('يرجى ملء جميع البيانات المطلوبة');
+      return;
+    }
+
+    // Check duplication
+    const storedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    if (storedUsers.some((u: UserProfile) => u.phone === formData.phone)) {
+      setError('رقم الهاتف مسجل بالفعل');
+      return;
+    }
+
+    // Save and Register
+    const newUser = { ...formData } as UserProfile;
+    storedUsers.push(newUser);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(storedUsers));
+    
+    onRegister(newUser);
   };
 
   const isValid = formData.name && formData.shopName && formData.phone && formData.age && formData.address && formData.password;
@@ -345,7 +384,14 @@ const RegisterMerchant = ({ onRegister }: { onRegister: (data: UserProfile) => v
          <button onClick={() => navigate('/role-select')} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
          <h2 className="text-2xl font-bold text-center flex-1 mr-[-36px] text-gray-900">بيانات التاجر</h2>
       </div>
-      <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); if(isValid) onRegister(formData as UserProfile); }}>
+
+      <form className="space-y-2" onSubmit={handleSubmit}>
+        {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-2 font-bold border border-red-100 text-center">
+              {error}
+            </div>
+        )}
+
         <InputField label="الاسم الكامل" value={formData.name || ''} onChange={(e: any) => handleChange('name', e.target.value)} required icon={User} />
         <InputField label="اسم المحل" value={formData.shopName || ''} onChange={(e: any) => handleChange('shopName', e.target.value)} required icon={Store} />
         <InputField label="رقم التليفون" value={formData.phone || ''} onChange={(e: any) => handleChange('phone', e.target.value)} type="tel" required icon={() => <span>📞</span>} />
@@ -372,10 +418,36 @@ const RegisterMerchant = ({ onRegister }: { onRegister: (data: UserProfile) => v
 
 const RegisterConsumer = ({ onRegister }: { onRegister: (data: UserProfile) => void }) => {
   const [formData, setFormData] = useState<Partial<UserProfile>>({ role: 'CONSUMER' });
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (field: keyof UserProfile, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!formData.name || !formData.phone || !formData.password) {
+      setError('يرجى ملء جميع البيانات');
+      return;
+    }
+
+    // Check duplication
+    const storedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    if (storedUsers.some((u: UserProfile) => u.phone === formData.phone)) {
+      setError('رقم الهاتف مسجل بالفعل');
+      return;
+    }
+
+    // Save and Register
+    const newUser = { ...formData } as UserProfile;
+    storedUsers.push(newUser);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(storedUsers));
+
+    onRegister(newUser);
   };
 
   const isValid = formData.name && formData.phone && formData.password;
@@ -387,7 +459,12 @@ const RegisterConsumer = ({ onRegister }: { onRegister: (data: UserProfile) => v
          <h2 className="text-2xl font-bold text-center flex-1 mr-[-36px] text-gray-900">بيانات المستهلك</h2>
       </div>
       <div className="flex-1 flex flex-col justify-center -mt-10">
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if(isValid) onRegister(formData as UserProfile); }}>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+            {error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-2 font-bold border border-red-100 text-center">
+                {error}
+                </div>
+            )}
             <InputField label="الاسم الكامل" value={formData.name || ''} onChange={(e: any) => handleChange('name', e.target.value)} required icon={User} />
             <InputField label="رقم التليفون" value={formData.phone || ''} onChange={(e: any) => handleChange('phone', e.target.value)} type="tel" required icon={() => <span>📞</span>} />
             <InputField label="كلمة المرور" value={formData.password || ''} onChange={(e: any) => handleChange('password', e.target.value)} type="password" required />
@@ -1056,9 +1133,17 @@ const Splash = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check for active session immediately
+    const activeSession = localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION);
+    
     const timer = setTimeout(() => {
-      navigate('/auth-start');
+      if (activeSession) {
+        navigate('/home');
+      } else {
+        navigate('/auth-start');
+      }
     }, 2000);
+    
     return () => clearTimeout(timer);
   }, [navigate]);
 
@@ -1078,17 +1163,30 @@ const App = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
 
+  // Load session on start
+  useEffect(() => {
+    const savedSession = localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION);
+    if (savedSession) {
+      setUser(JSON.parse(savedSession));
+    }
+  }, []);
+
   const handleLogin = (userData: UserProfile) => {
+      // Save session
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(userData));
       setUser(userData);
       navigate('/home');
   };
 
   const handleRegister = (userData: UserProfile) => {
+      // Auto login after register
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(userData));
       setUser(userData);
       navigate('/home');
   };
 
   const handleLogout = () => {
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
     setUser(null);
     navigate('/auth-start');
   };
