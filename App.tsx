@@ -118,7 +118,7 @@ const Header = ({ title, onBack, rightContent }: { title?: string, onBack?: () =
       <div className="absolute left-0 right-0 text-center pointer-events-none">
         <h1 className="text-lg font-bold text-gray-900">{title}</h1>
       </div>
-      <div className="flex-1 flex justify-end">
+      <div className="flex-1 flex justify-end z-[101]">
         {rightContent}
       </div>
     </div>
@@ -809,14 +809,17 @@ const ConsumerShop = () => {
        <Header 
          title="تسوق المنتجات" 
          rightContent={
-          <div className="relative">
+          <button 
+            onClick={() => navigate('/consumer/checkout', { state: { cart } })}
+            className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
              <ShoppingCart className="w-6 h-6 text-green-800" />
              {totalItems > 0 && (
-               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">
+               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">
                  {totalItems}
                </span>
              )}
-          </div>
+          </button>
          }
        />
 
@@ -1004,14 +1007,17 @@ const B2BMarket = () => {
        <Header 
          title="طلب بضاعة (جملة)" 
          rightContent={
-          <div className="relative">
+          <button 
+            onClick={() => navigate('/merchant/checkout', { state: { cart } })}
+            className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
              <ShoppingCart className="w-6 h-6 text-green-800" />
              {totalItems > 0 && (
-               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">
+               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">
                  {totalItems}
                </span>
              )}
-          </div>
+          </button>
          }
        />
 
