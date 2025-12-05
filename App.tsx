@@ -23,7 +23,8 @@ import {
   Truck,
   Users,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  KeyRound
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { CHART_DATA, MOCK_NOTIFICATIONS, MOCK_ORDERS, B2B_PRODUCTS, CONSUMER_PRODUCTS } from './constants';
@@ -97,6 +98,29 @@ const CustomIcons = {
 };
 
 // --- Shared Components ---
+
+const Header = ({ title, onBack, rightContent }: { title?: string, onBack?: () => void, rightContent?: React.ReactNode }) => {
+  return (
+    <div className="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-sm shadow-sm z-[100] flex items-center px-4 max-w-md mx-auto">
+      <div className="flex-1 flex justify-start">
+        {onBack && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onBack(); }} 
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors z-[101]"
+          >
+            <ArrowRight className="w-6 h-6 text-gray-800" />
+          </button>
+        )}
+      </div>
+      <div className="absolute left-0 right-0 text-center pointer-events-none">
+        <h1 className="text-lg font-bold text-gray-900">{title}</h1>
+      </div>
+      <div className="flex-1 flex justify-end">
+        {rightContent}
+      </div>
+    </div>
+  );
+};
 
 const Button = ({ children, onClick, variant = 'primary', className = '', fullWidth = false, disabled = false }: any) => {
   const baseStyle = "py-3 px-6 rounded-full font-bold transition-all duration-200 active:scale-95 shadow-md flex items-center justify-center gap-2";
@@ -195,6 +219,109 @@ const AuthStart = () => {
   );
 };
 
+const ForgotPassword = () => {
+  const navigate = useNavigate();
+  const [phone, setPhone] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [role, setRole] = useState<UserRole>('CONSUMER');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    const storedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    
+    // Find index of user with this phone AND role
+    const userIndex = storedUsers.findIndex((u: UserProfile) => 
+      u.phone === phone && u.role === role
+    );
+
+    if (userIndex !== -1) {
+      // Update password
+      storedUsers[userIndex].password = newPassword;
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(storedUsers));
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } else {
+      setError('هذا الحساب غير موجود، تأكد من الرقم ونوع الحساب');
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
+           <Check className="w-12 h-12 text-green-600" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">تم تغيير كلمة المرور!</h2>
+        <p className="text-gray-500">جاري توجيهك لصفحة الدخول...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+       <Header onBack={() => navigate('/login')} title="استعادة كلمة المرور" />
+       
+       <div className="p-6 pt-24 flex-1 flex flex-col items-center">
+         <div className="mb-8">
+            <KeyRound className="w-16 h-16 text-green-800" />
+         </div>
+
+         {/* Role Toggle */}
+         <div className="bg-gray-100 p-1 rounded-xl flex w-full max-w-sm mb-6">
+            <button 
+              onClick={() => setRole('CONSUMER')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${role === 'CONSUMER' ? 'bg-white text-green-800 shadow-sm' : 'text-gray-500'}`}
+            >
+              مستهلك
+            </button>
+            <button 
+              onClick={() => setRole('MERCHANT')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${role === 'MERCHANT' ? 'bg-white text-green-800 shadow-sm' : 'text-gray-500'}`}
+            >
+              تاجر
+            </button>
+         </div>
+
+         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-2">
+            {error && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-lg flex items-center gap-2 text-sm mb-4 font-bold border border-red-100 text-right">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                {error}
+              </div>
+            )}
+
+            <InputField 
+              label="رقم الهاتف المسجل" 
+              value={phone}
+              onChange={(e: any) => setPhone(e.target.value)}
+              required 
+              type="tel"
+              icon={() => <span>📞</span>}
+            />
+            <InputField 
+              label="كلمة المرور الجديدة" 
+              type="password" 
+              value={newPassword}
+              onChange={(e: any) => setNewPassword(e.target.value)}
+              required 
+              icon={() => <span className="absolute right-3 top-3.5 text-gray-400 text-xs">🔒</span>} 
+            />
+
+            <div className="pt-6">
+              <Button fullWidth disabled={!phone || !newPassword}>تغيير كلمة المرور</Button>
+            </div>
+         </form>
+       </div>
+    </div>
+  );
+};
+
 const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
   const [role, setRole] = useState<UserRole | null>(null);
   const [phone, setPhone] = useState('');
@@ -225,14 +352,10 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
 
   if (!role) {
     return (
-      <div className="min-h-screen bg-white flex flex-col p-6">
-        <div className="flex items-center mb-8">
-           <button onClick={() => navigate('/auth-start')} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
-             <ArrowRight className="w-7 h-7 text-gray-700" />
-           </button>
-        </div>
+      <div className="min-h-screen bg-white flex flex-col">
+        <Header onBack={() => navigate('/auth-start')} />
 
-        <div className="flex-1 flex flex-col items-center justify-center -mt-20">
+        <div className="flex-1 flex flex-col items-center justify-center -mt-10 p-6">
           <div className="mb-8 scale-75">
               <CustomIcons.Logo />
           </div>
@@ -259,15 +382,10 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
   }
 
   return (
-    <div className="min-h-screen bg-white p-6 flex flex-col">
-       <div className="flex items-center mb-8">
-          <button onClick={() => setRole(null)} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
-            <ArrowRight className="w-7 h-7 text-gray-700" />
-          </button>
-          <span className="font-bold text-gray-800 mr-2 text-lg">رجوع</span>
-       </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      <Header onBack={() => setRole(null)} />
 
-      <div className="flex-1 flex flex-col items-center justify-center -mt-20">
+      <div className="flex-1 flex flex-col items-center justify-center -mt-10 p-6">
         <div className="mb-6 scale-75">
           <CustomIcons.Logo />
         </div>
@@ -297,6 +415,17 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
             required 
             icon={() => <span className="absolute right-3 top-3.5 text-gray-400 text-xs">🔒</span>} 
           />
+          
+          <div className="flex justify-end">
+            <button 
+              type="button" 
+              onClick={() => navigate('/forgot-password')} 
+              className="text-sm text-green-700 font-bold hover:underline"
+            >
+              نسيت كلمة المرور؟
+            </button>
+          </div>
+
           <div className="pt-4">
             <Button fullWidth disabled={!phone || !password}>دخول</Button>
           </div>
@@ -309,14 +438,10 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
 const RoleSelection = () => {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-white flex flex-col p-6">
-       <div className="flex items-center mb-8">
-           <button onClick={() => navigate('/auth-start')} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
-             <ArrowRight className="w-7 h-7 text-gray-700" />
-           </button>
-       </div>
+    <div className="min-h-screen bg-white flex flex-col">
+       <Header onBack={() => navigate('/auth-start')} />
 
-       <div className="flex-1 flex flex-col items-center justify-center -mt-20 text-center">
+       <div className="flex-1 flex flex-col items-center justify-center -mt-10 p-6 text-center">
           <div className="mb-12 scale-75">
               <CustomIcons.Logo />
           </div>
@@ -361,10 +486,10 @@ const RegisterMerchant = ({ onRegister }: { onRegister: (data: UserProfile) => v
       return;
     }
 
-    // Check duplication
+    // Check duplication (Allows same phone for different roles)
     const storedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
-    if (storedUsers.some((u: UserProfile) => u.phone === formData.phone)) {
-      setError('رقم الهاتف مسجل بالفعل');
+    if (storedUsers.some((u: UserProfile) => u.phone === formData.phone && u.role === 'MERCHANT')) {
+      setError('رقم الهاتف مسجل بالفعل كتاجر');
       return;
     }
 
@@ -379,13 +504,10 @@ const RegisterMerchant = ({ onRegister }: { onRegister: (data: UserProfile) => v
   const isValid = formData.name && formData.shopName && formData.phone && formData.age && formData.address && formData.password;
 
   return (
-    <div className="min-h-screen bg-white p-6 pb-20">
-      <div className="flex items-center mb-4">
-         <button onClick={() => navigate('/role-select')} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
-         <h2 className="text-2xl font-bold text-center flex-1 mr-[-36px] text-gray-900">بيانات التاجر</h2>
-      </div>
+    <div className="min-h-screen bg-white pb-20">
+      <Header onBack={() => navigate('/role-select')} title="بيانات التاجر" />
 
-      <form className="space-y-2" onSubmit={handleSubmit}>
+      <form className="space-y-2 p-6 pt-24" onSubmit={handleSubmit}>
         {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-2 font-bold border border-red-100 text-center">
               {error}
@@ -435,10 +557,10 @@ const RegisterConsumer = ({ onRegister }: { onRegister: (data: UserProfile) => v
       return;
     }
 
-    // Check duplication
+    // Check duplication (Allows same phone for different roles)
     const storedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
-    if (storedUsers.some((u: UserProfile) => u.phone === formData.phone)) {
-      setError('رقم الهاتف مسجل بالفعل');
+    if (storedUsers.some((u: UserProfile) => u.phone === formData.phone && u.role === 'CONSUMER')) {
+      setError('رقم الهاتف مسجل بالفعل كمستهلك');
       return;
     }
 
@@ -453,12 +575,10 @@ const RegisterConsumer = ({ onRegister }: { onRegister: (data: UserProfile) => v
   const isValid = formData.name && formData.phone && formData.password;
 
   return (
-    <div className="min-h-screen bg-white p-6 pb-20 flex flex-col">
-      <div className="flex items-center mb-6">
-         <button onClick={() => navigate('/role-select')} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
-         <h2 className="text-2xl font-bold text-center flex-1 mr-[-36px] text-gray-900">بيانات المستهلك</h2>
-      </div>
-      <div className="flex-1 flex flex-col justify-center -mt-10">
+    <div className="min-h-screen bg-white pb-20 flex flex-col">
+      <Header onBack={() => navigate('/role-select')} title="بيانات المستهلك" />
+
+      <div className="flex-1 flex flex-col justify-center p-6 pt-24">
         <form className="space-y-4" onSubmit={handleSubmit}>
             {error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-2 font-bold border border-red-100 text-center">
@@ -587,75 +707,74 @@ const Checkout = ({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex flex-col pb-10">
-       <div className="flex items-center mb-6">
-         <button onClick={handleBack}><ArrowRight className="text-gray-700" /></button>
-         <h1 className="text-xl font-bold flex-1 text-center mr-[-24px]">الدفع</h1>
-       </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col pb-10">
+       <Header onBack={handleBack} title="الدفع" />
 
-       {/* Items Summary */}
-       <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
-         <h3 className="font-bold text-gray-800 mb-3 text-right text-sm">محتويات الطلب</h3>
-         <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-            {cartItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center text-sm border-b border-gray-50 last:border-0 pb-2 last:pb-0">
-                    <div className="text-right">
-                        <div className="font-bold text-gray-800">{item.name}</div>
-                        <div className="text-xs text-gray-500">{item.qty} x {item.price} ج.م</div>
+       <div className="p-6 pt-24 flex-1">
+          {/* Items Summary */}
+          <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+            <h3 className="font-bold text-gray-800 mb-3 text-right text-sm">محتويات الطلب</h3>
+            <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                {cartItems.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center text-sm border-b border-gray-50 last:border-0 pb-2 last:pb-0">
+                        <div className="text-right">
+                            <div className="font-bold text-gray-800">{item.name}</div>
+                            <div className="text-xs text-gray-500">{item.qty} x {item.price} ج.م</div>
+                        </div>
+                        <div className="font-bold text-green-700">{item.itemTotal} ج.م</div>
                     </div>
-                    <div className="font-bold text-green-700">{item.itemTotal} ج.م</div>
+                ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
+            <h3 className="font-bold text-gray-800 mb-4 text-right">طريقة الدفع</h3>
+            
+            <div 
+              onClick={() => setMethod('cash')}
+              className={`flex items-center justify-between p-4 rounded-xl border mb-3 cursor-pointer ${method === 'cash' ? 'border-green-600 bg-green-50' : 'border-gray-200'}`}
+            >
+                <div className="flex items-center gap-3">
+                  <Banknote className="text-green-700" />
+                  <span className="font-bold text-gray-700">دفع عند الاستلام</span>
                 </div>
-            ))}
-         </div>
-       </div>
-
-       <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
-         <h3 className="font-bold text-gray-800 mb-4 text-right">طريقة الدفع</h3>
-         
-         <div 
-           onClick={() => setMethod('cash')}
-           className={`flex items-center justify-between p-4 rounded-xl border mb-3 cursor-pointer ${method === 'cash' ? 'border-green-600 bg-green-50' : 'border-gray-200'}`}
-         >
-            <div className="flex items-center gap-3">
-              <Banknote className="text-green-700" />
-              <span className="font-bold text-gray-700">دفع عند الاستلام</span>
+                {method === 'cash' && <div className="w-4 h-4 rounded-full bg-green-600"></div>}
             </div>
-            {method === 'cash' && <div className="w-4 h-4 rounded-full bg-green-600"></div>}
-         </div>
 
-         <div 
-           onClick={() => setMethod('visa')}
-           className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer ${method === 'visa' ? 'border-green-600 bg-green-50' : 'border-gray-200'}`}
-         >
-            <div className="flex items-center gap-3">
-              <CreditCard className="text-green-700" />
-              <span className="font-bold text-gray-700">بطاقة ائتمان (فيزا)</span>
+            <div 
+              onClick={() => setMethod('visa')}
+              className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer ${method === 'visa' ? 'border-green-600 bg-green-50' : 'border-gray-200'}`}
+            >
+                <div className="flex items-center gap-3">
+                  <CreditCard className="text-green-700" />
+                  <span className="font-bold text-gray-700">بطاقة ائتمان (فيزا)</span>
+                </div>
+                {method === 'visa' && <div className="w-4 h-4 rounded-full bg-green-600"></div>}
             </div>
-            {method === 'visa' && <div className="w-4 h-4 rounded-full bg-green-600"></div>}
-         </div>
-       </div>
+          </div>
 
-       <div className="bg-white rounded-2xl shadow-sm p-6 mb-auto">
-         <h3 className="font-bold text-gray-800 mb-4 text-right">ملخص الدفع</h3>
-         <div className="flex justify-between mb-2 text-sm">
-            <span>المجموع الفرعي</span>
-            <span>{subtotal.toLocaleString()} ج.م</span>
-         </div>
-         <div className="flex justify-between mb-2 text-sm">
-            <span>التوصيل</span>
-            <span>{delivery} ج.م</span>
-         </div>
-         <div className="border-t my-3"></div>
-         <div className="flex justify-between font-bold text-lg text-green-800">
-            <span>الإجمالي</span>
-            <span>{total.toLocaleString()} ج.م</span>
-         </div>
-       </div>
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-auto">
+            <h3 className="font-bold text-gray-800 mb-4 text-right">ملخص الدفع</h3>
+            <div className="flex justify-between mb-2 text-sm">
+                <span>المجموع الفرعي</span>
+                <span>{subtotal.toLocaleString()} ج.م</span>
+            </div>
+            <div className="flex justify-between mb-2 text-sm">
+                <span>التوصيل</span>
+                <span>{delivery} ج.م</span>
+            </div>
+            <div className="border-t my-3"></div>
+            <div className="flex justify-between font-bold text-lg text-green-800">
+                <span>الإجمالي</span>
+                <span>{total.toLocaleString()} ج.م</span>
+            </div>
+          </div>
 
-       <div className="mt-4">
-        <Button fullWidth onClick={onConfirm}>
-            تأكيد الطلب ({total.toLocaleString()} ج.م)
-        </Button>
+          <div className="mt-4">
+            <Button fullWidth onClick={onConfirm}>
+                تأكيد الطلب ({total.toLocaleString()} ج.م)
+            </Button>
+          </div>
        </div>
     </div>
   );
@@ -684,20 +803,21 @@ const ConsumerShop = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
        {/* Header */}
-       <div className="bg-white p-4 shadow-sm flex items-center justify-between sticky top-0 z-30">
-        <div className="relative">
-           <ShoppingCart className="w-6 h-6 text-green-800" />
-           {totalItems > 0 && (
-             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">
-               {totalItems}
-             </span>
-           )}
-        </div>
-        <h1 className="text-xl font-bold text-gray-900">تسوق المنتجات</h1>
-        <div className="w-6"></div>
-      </div>
+       <Header 
+         title="تسوق المنتجات" 
+         rightContent={
+          <div className="relative">
+             <ShoppingCart className="w-6 h-6 text-green-800" />
+             {totalItems > 0 && (
+               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">
+                 {totalItems}
+               </span>
+             )}
+          </div>
+         }
+       />
 
-      <div className="p-4 grid grid-cols-2 gap-4">
+      <div className="p-4 pt-20 grid grid-cols-2 gap-4">
         {CONSUMER_PRODUCTS.map((product) => (
           <div key={product.id} className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
             <div className="h-20 w-full flex items-center justify-center mb-2 bg-gray-50 rounded-lg">
@@ -838,11 +958,8 @@ const MerchantOrders = () => {
     const navigate = useNavigate();
     return (
         <div className="min-h-screen bg-gray-50 pb-24">
-            <div className="bg-white p-4 shadow-sm flex items-center gap-2 sticky top-0 z-20">
-                <button onClick={() => navigate('/merchant/dashboard')}><ArrowRight /></button>
-                <h1 className="text-lg font-bold">طلبات العملاء</h1>
-            </div>
-            <div className="p-4 space-y-4">
+            <Header onBack={() => navigate('/merchant/dashboard')} title="طلبات العملاء" />
+            <div className="p-4 pt-24 space-y-4">
                 {/* Demo Orders */}
                 {Object.values(MOCK_ORDERS).map((order) => (
                     <div key={order.id} onClick={() => navigate(`/order/${order.id}`)} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 cursor-pointer">
@@ -881,20 +998,21 @@ const B2BMarket = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
        {/* Header */}
-       <div className="bg-white p-4 shadow-sm flex items-center justify-between sticky top-0 z-30">
-        <div className="relative">
-           <ShoppingCart className="w-6 h-6 text-green-800" />
-           {totalItems > 0 && (
-             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">
-               {totalItems}
-             </span>
-           )}
-        </div>
-        <h1 className="text-xl font-bold text-gray-900">طلب بضاعة (جملة)</h1>
-        <div className="w-6"></div>
-      </div>
+       <Header 
+         title="طلب بضاعة (جملة)" 
+         rightContent={
+          <div className="relative">
+             <ShoppingCart className="w-6 h-6 text-green-800" />
+             {totalItems > 0 && (
+               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">
+                 {totalItems}
+               </span>
+             )}
+          </div>
+         }
+       />
 
-      <div className="p-4 grid grid-cols-2 gap-4">
+      <div className="p-4 pt-20 grid grid-cols-2 gap-4">
         {B2B_PRODUCTS.map((product) => (
           <div key={product.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
             <div className="h-24 w-full flex items-center justify-center mb-2">
@@ -948,15 +1066,9 @@ const NotificationCenter = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white p-6 shadow-sm flex items-center justify-between sticky top-0 z-30">
-        <button onClick={() => navigate('/merchant/dashboard')}>
-           <ArrowRight className="w-6 h-6 text-green-800" />
-        </button>
-        <h1 className="text-xl font-bold text-gray-900">الإشعارات</h1>
-        <div className="w-6"></div> 
-      </div>
+      <Header onBack={() => navigate('/merchant/dashboard')} title="الإشعارات" />
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 pt-20 space-y-4">
         {MOCK_NOTIFICATIONS.map((note) => (
            <div 
              key={note.id} 
@@ -1037,9 +1149,9 @@ const InvoicesPage = () => {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-green-50 p-6 rounded-b-3xl shadow-sm mb-6">
-          <div className="flex items-center gap-2 mb-4">
-              <button onClick={() => navigate('/merchant/dashboard')}><ArrowRight /></button>
+      <div className="bg-green-50 p-6 rounded-b-3xl shadow-sm mb-6 pt-20">
+          <div className="flex items-center gap-2 mb-4 fixed top-0 left-0 right-0 p-4 bg-green-50 z-20 max-w-md mx-auto">
+              <button onClick={() => navigate('/merchant/dashboard')}><ArrowRight className="w-6 h-6 text-green-900" /></button>
               <h1 className="text-2xl font-bold text-gray-900">الفواتير والحسابات</h1>
           </div>
         
@@ -1244,6 +1356,7 @@ const App = () => {
         {/* Auth Flow */}
         <Route path="/auth-start" element={<AuthStart />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/role-select" element={<RoleSelection />} />
         <Route path="/register/merchant" element={<RegisterMerchant onRegister={handleRegister} />} />
         <Route path="/register/consumer" element={<RegisterConsumer onRegister={handleRegister} />} />
