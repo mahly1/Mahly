@@ -544,12 +544,28 @@ const Checkout = ({
   onConfirm: () => void 
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [method, setMethod] = useState<'cash' | 'visa'>('cash');
+  
+  // Get cart from navigation state
+  const cart = location.state?.cart || {};
+  const productsList = userRole === 'MERCHANT' ? B2B_PRODUCTS : CONSUMER_PRODUCTS;
 
-  // Hardcoded totals for demo
-  const subtotal = 1500;
-  const delivery = 50;
-  const total = 1550;
+  // Calculate totals
+  let subtotal = 0;
+  const cartItems: any[] = [];
+
+  Object.entries(cart).forEach(([id, qty]) => {
+      const product = productsList.find(p => p.id === id);
+      if (product && (qty as number) > 0) {
+          const itemTotal = product.price * (qty as number);
+          subtotal += itemTotal;
+          cartItems.push({ ...product, qty, itemTotal });
+      }
+  });
+
+  const delivery = userRole === 'MERCHANT' ? 100 : 20;
+  const total = subtotal + delivery;
 
   const handleBack = () => {
       if (userRole === 'MERCHANT') {
@@ -559,14 +575,41 @@ const Checkout = ({
       }
   };
 
+  if (cartItems.length === 0) {
+      return (
+          <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+              <ShoppingBasket className="w-16 h-16 text-gray-300 mb-4" />
+              <h2 className="text-xl font-bold text-gray-800">السلة فارغة</h2>
+              <p className="text-gray-500 mb-6">لم تقم بإضافة أي منتجات للسلة بعد.</p>
+              <Button onClick={handleBack}>العودة للتسوق</Button>
+          </div>
+      );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex flex-col">
+    <div className="min-h-screen bg-gray-50 p-6 flex flex-col pb-10">
        <div className="flex items-center mb-6">
          <button onClick={handleBack}><ArrowRight className="text-gray-700" /></button>
          <h1 className="text-xl font-bold flex-1 text-center mr-[-24px]">الدفع</h1>
        </div>
 
-       <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+       {/* Items Summary */}
+       <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+         <h3 className="font-bold text-gray-800 mb-3 text-right text-sm">محتويات الطلب</h3>
+         <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+            {cartItems.map((item) => (
+                <div key={item.id} className="flex justify-between items-center text-sm border-b border-gray-50 last:border-0 pb-2 last:pb-0">
+                    <div className="text-right">
+                        <div className="font-bold text-gray-800">{item.name}</div>
+                        <div className="text-xs text-gray-500">{item.qty} x {item.price} ج.م</div>
+                    </div>
+                    <div className="font-bold text-green-700">{item.itemTotal} ج.م</div>
+                </div>
+            ))}
+         </div>
+       </div>
+
+       <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
          <h3 className="font-bold text-gray-800 mb-4 text-right">طريقة الدفع</h3>
          
          <div 
@@ -593,25 +636,27 @@ const Checkout = ({
        </div>
 
        <div className="bg-white rounded-2xl shadow-sm p-6 mb-auto">
-         <h3 className="font-bold text-gray-800 mb-4 text-right">ملخص الطلب</h3>
+         <h3 className="font-bold text-gray-800 mb-4 text-right">ملخص الدفع</h3>
          <div className="flex justify-between mb-2 text-sm">
             <span>المجموع الفرعي</span>
-            <span>{userRole === 'MERCHANT' ? '3,450' : '150'} ج.م</span>
+            <span>{subtotal.toLocaleString()} ج.م</span>
          </div>
          <div className="flex justify-between mb-2 text-sm">
             <span>التوصيل</span>
-            <span>{userRole === 'MERCHANT' ? '100' : '20'} ج.م</span>
+            <span>{delivery} ج.م</span>
          </div>
          <div className="border-t my-3"></div>
          <div className="flex justify-between font-bold text-lg text-green-800">
             <span>الإجمالي</span>
-            <span>{userRole === 'MERCHANT' ? '3,550' : '170'} ج.م</span>
+            <span>{total.toLocaleString()} ج.م</span>
          </div>
        </div>
 
-       <Button fullWidth onClick={onConfirm}>
-         تأكيد الطلب
-       </Button>
+       <div className="mt-4">
+        <Button fullWidth onClick={onConfirm}>
+            تأكيد الطلب ({total.toLocaleString()} ج.م)
+        </Button>
+       </div>
     </div>
   );
 };
@@ -688,7 +733,7 @@ const ConsumerShop = () => {
 
       {totalItems > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40 max-w-md mx-auto">
-          <Button fullWidth onClick={() => navigate('/consumer/checkout')}>
+          <Button fullWidth onClick={() => navigate('/consumer/checkout', { state: { cart } })}>
              استمرار للدفع ({totalItems})
           </Button>
         </div>
@@ -885,7 +930,7 @@ const B2BMarket = () => {
 
       {totalItems > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40 max-w-md mx-auto">
-          <Button fullWidth onClick={() => navigate('/merchant/checkout')}>
+          <Button fullWidth onClick={() => navigate('/merchant/checkout', { state: { cart } })}>
              استمرار للدفع ({totalItems})
           </Button>
         </div>
