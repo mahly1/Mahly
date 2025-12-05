@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { 
@@ -185,10 +186,10 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
     e.preventDefault();
     if (!email || !password || !role) return;
     
-    // Create a mock user that uses the entered email/phone so the data feels connected
+    // Create a mock user
     const mockUser: UserProfile = role === 'MERCHANT' ? {
-      name: 'تاجر محلي', // Generic name since login doesn't ask for it
-      phone: email, // Use the input as phone/email
+      name: 'تاجر محلي',
+      phone: email,
       role: 'MERCHANT',
       shopName: 'سوبر ماركت (تجريبي)',
       address: 'القاهرة، مصر',
@@ -196,7 +197,7 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
       workerCount: '3'
     } : {
       name: 'مستخدم محلي',
-      phone: email, // Use the input as phone/email
+      phone: email,
       role: 'CONSUMER',
       address: 'القاهرة، مصر',
       age: '28'
@@ -206,60 +207,75 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
 
   if (!role) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="mb-8 scale-75">
-            <CustomIcons.Logo />
+      <div className="min-h-screen bg-white flex flex-col p-6">
+        <div className="flex items-center mb-8">
+           <button onClick={() => navigate(-1)} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
+             <ArrowRight className="w-7 h-7 text-gray-700" />
+           </button>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-8">تسجيل الدخول كـ:</h2>
-        <div className="space-y-4 w-full max-w-sm">
-          <button 
-            onClick={() => setRole('MERCHANT')}
-            className="w-full bg-green-800 text-white p-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-green-900 transition-colors shadow-lg"
-          >
-            <Store className="w-8 h-8" />
-            <span className="text-2xl font-bold">تاجر</span>
-          </button>
-          <button 
-            onClick={() => setRole('CONSUMER')}
-            className="w-full bg-green-700 text-white p-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-green-800 transition-colors shadow-lg"
-          >
-            <ShoppingCart className="w-8 h-8" />
-            <span className="text-2xl font-bold">مستهلك</span>
-          </button>
-          <button onClick={() => navigate(-1)} className="text-gray-500 text-sm mt-4">رجوع</button>
+
+        <div className="flex-1 flex flex-col items-center justify-center -mt-20">
+          <div className="mb-8 scale-75">
+              <CustomIcons.Logo />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-8">تسجيل الدخول كـ:</h2>
+          <div className="space-y-4 w-full max-w-sm">
+            <button 
+              onClick={() => setRole('MERCHANT')}
+              className="w-full bg-green-800 text-white p-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-green-900 transition-colors shadow-lg"
+            >
+              <Store className="w-8 h-8" />
+              <span className="text-2xl font-bold">تاجر</span>
+            </button>
+            <button 
+              onClick={() => setRole('CONSUMER')}
+              className="w-full bg-green-700 text-white p-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-green-800 transition-colors shadow-lg"
+            >
+              <ShoppingCart className="w-8 h-8" />
+              <span className="text-2xl font-bold">مستهلك</span>
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white p-6 flex flex-col items-center justify-center">
-      <div className="mb-6 scale-75">
-        <CustomIcons.Logo />
-      </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">تسجيل دخول {role === 'MERCHANT' ? 'التاجر' : 'المستهلك'}</h2>
-      <button onClick={() => setRole(null)} className="text-sm text-green-700 font-bold mb-6">تغيير نوع الحساب</button>
-      
-      <form onSubmit={handleLogin} className="w-full max-w-sm space-y-2">
-        <InputField 
-          label="البريد الإلكتروني / رقم الهاتف" 
-          value={email}
-          onChange={(e: any) => setEmail(e.target.value)}
-          required 
-          icon={User} 
-        />
-        <InputField 
-          label="كلمة المرور" 
-          type="password" 
-          value={password}
-          onChange={(e: any) => setPassword(e.target.value)}
-          required 
-          icon={() => <span className="absolute right-3 top-3.5 text-gray-400 text-xs">🔒</span>} 
-        />
-        <div className="pt-4">
-          <Button fullWidth disabled={!email || !password}>دخول</Button>
+    <div className="min-h-screen bg-white p-6 flex flex-col">
+       <div className="flex items-center mb-8">
+          <button onClick={() => setRole(null)} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
+            <ArrowRight className="w-7 h-7 text-gray-700" />
+          </button>
+          <span className="font-bold text-gray-800 mr-2 text-lg">رجوع</span>
+       </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center -mt-20">
+        <div className="mb-6 scale-75">
+          <CustomIcons.Logo />
         </div>
-      </form>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">تسجيل دخول {role === 'MERCHANT' ? 'التاجر' : 'المستهلك'}</h2>
+        
+        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-2">
+          <InputField 
+            label="البريد الإلكتروني / رقم الهاتف" 
+            value={email}
+            onChange={(e: any) => setEmail(e.target.value)}
+            required 
+            icon={User} 
+          />
+          <InputField 
+            label="كلمة المرور" 
+            type="password" 
+            value={password}
+            onChange={(e: any) => setPassword(e.target.value)}
+            required 
+            icon={() => <span className="absolute right-3 top-3.5 text-gray-400 text-xs">🔒</span>} 
+          />
+          <div className="pt-4">
+            <Button fullWidth disabled={!email || !password}>دخول</Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
@@ -267,27 +283,34 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
 const RoleSelection = () => {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-       <div className="mb-12 scale-75">
-          <CustomIcons.Logo />
+    <div className="min-h-screen bg-white flex flex-col p-6">
+       <div className="flex items-center mb-8">
+           <button onClick={() => navigate(-1)} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
+             <ArrowRight className="w-7 h-7 text-gray-700" />
+           </button>
        </div>
-       <h2 className="text-2xl font-bold text-gray-800 mb-8">إنشاء حساب كـ:</h2>
-       <div className="space-y-4 w-full max-w-sm">
-         <button 
-           onClick={() => navigate('/register/merchant')}
-           className="w-full bg-green-800 text-white p-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-green-900 transition-colors shadow-lg"
-         >
-           <Store className="w-8 h-8" />
-           <span className="text-2xl font-bold">تاجر</span>
-         </button>
-         <button 
-           onClick={() => navigate('/register/consumer')}
-           className="w-full bg-green-700 text-white p-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-green-800 transition-colors shadow-lg"
-         >
-           <ShoppingCart className="w-8 h-8" />
-           <span className="text-2xl font-bold">مستهلك</span>
-         </button>
-         <button onClick={() => navigate(-1)} className="text-gray-500 text-sm mt-4">رجوع</button>
+
+       <div className="flex-1 flex flex-col items-center justify-center -mt-20 text-center">
+          <div className="mb-12 scale-75">
+              <CustomIcons.Logo />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-8">إنشاء حساب كـ:</h2>
+          <div className="space-y-4 w-full max-w-sm">
+            <button 
+              onClick={() => navigate('/register/merchant')}
+              className="w-full bg-green-800 text-white p-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-green-900 transition-colors shadow-lg"
+            >
+              <Store className="w-8 h-8" />
+              <span className="text-2xl font-bold">تاجر</span>
+            </button>
+            <button 
+              onClick={() => navigate('/register/consumer')}
+              className="w-full bg-green-700 text-white p-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-green-800 transition-colors shadow-lg"
+            >
+              <ShoppingCart className="w-8 h-8" />
+              <span className="text-2xl font-bold">مستهلك</span>
+            </button>
+          </div>
        </div>
     </div>
   );
@@ -306,8 +329,8 @@ const RegisterMerchant = ({ onRegister }: { onRegister: (data: UserProfile) => v
   return (
     <div className="min-h-screen bg-white p-6 pb-20">
       <div className="flex items-center mb-4">
-         <button onClick={() => navigate(-1)}><ArrowRight className="text-gray-700" /></button>
-         <h2 className="text-2xl font-bold text-center flex-1 mr-[-24px] text-gray-900">بيانات التاجر</h2>
+         <button onClick={() => navigate(-1)} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
+         <h2 className="text-2xl font-bold text-center flex-1 mr-[-36px] text-gray-900">بيانات التاجر</h2>
       </div>
       <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); if(isValid) onRegister(formData as UserProfile); }}>
         <InputField label="الاسم الكامل" value={formData.name || ''} onChange={(e: any) => handleChange('name', e.target.value)} required icon={User} />
@@ -345,20 +368,22 @@ const RegisterConsumer = ({ onRegister }: { onRegister: (data: UserProfile) => v
   const isValid = formData.name && formData.phone && formData.password;
 
   return (
-    <div className="min-h-screen bg-white p-6 pb-20 flex flex-col justify-center">
+    <div className="min-h-screen bg-white p-6 pb-20 flex flex-col">
       <div className="flex items-center mb-6">
-         <button onClick={() => navigate(-1)}><ArrowRight className="text-gray-700" /></button>
-         <h2 className="text-2xl font-bold text-center flex-1 mr-[-24px] text-gray-900">بيانات المستهلك</h2>
+         <button onClick={() => navigate(-1)} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
+         <h2 className="text-2xl font-bold text-center flex-1 mr-[-36px] text-gray-900">بيانات المستهلك</h2>
       </div>
-      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if(isValid) onRegister(formData as UserProfile); }}>
-        <InputField label="الاسم الكامل" value={formData.name || ''} onChange={(e: any) => handleChange('name', e.target.value)} required icon={User} />
-        <InputField label="رقم التليفون" value={formData.phone || ''} onChange={(e: any) => handleChange('phone', e.target.value)} type="tel" required icon={() => <span>📞</span>} />
-        <InputField label="كلمة المرور" value={formData.password || ''} onChange={(e: any) => handleChange('password', e.target.value)} type="password" required />
-        
-        <div className="pt-8">
-          <Button fullWidth disabled={!isValid}>إنشاء الحساب</Button>
-        </div>
-      </form>
+      <div className="flex-1 flex flex-col justify-center -mt-10">
+        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if(isValid) onRegister(formData as UserProfile); }}>
+            <InputField label="الاسم الكامل" value={formData.name || ''} onChange={(e: any) => handleChange('name', e.target.value)} required icon={User} />
+            <InputField label="رقم التليفون" value={formData.phone || ''} onChange={(e: any) => handleChange('phone', e.target.value)} type="tel" required icon={() => <span>📞</span>} />
+            <InputField label="كلمة المرور" value={formData.password || ''} onChange={(e: any) => handleChange('password', e.target.value)} type="password" required />
+            
+            <div className="pt-8">
+            <Button fullWidth disabled={!isValid}>إنشاء الحساب</Button>
+            </div>
+        </form>
+      </div>
     </div>
   );
 };
