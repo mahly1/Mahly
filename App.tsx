@@ -209,7 +209,7 @@ const Login = ({ onLogin }: { onLogin: (data: UserProfile) => void }) => {
     return (
       <div className="min-h-screen bg-white flex flex-col p-6">
         <div className="flex items-center mb-8">
-           <button onClick={() => navigate(-1)} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
+           <button onClick={() => navigate('/auth-start')} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
              <ArrowRight className="w-7 h-7 text-gray-700" />
            </button>
         </div>
@@ -285,7 +285,7 @@ const RoleSelection = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col p-6">
        <div className="flex items-center mb-8">
-           <button onClick={() => navigate(-1)} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
+           <button onClick={() => navigate('/auth-start')} className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors">
              <ArrowRight className="w-7 h-7 text-gray-700" />
            </button>
        </div>
@@ -329,7 +329,7 @@ const RegisterMerchant = ({ onRegister }: { onRegister: (data: UserProfile) => v
   return (
     <div className="min-h-screen bg-white p-6 pb-20">
       <div className="flex items-center mb-4">
-         <button onClick={() => navigate(-1)} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
+         <button onClick={() => navigate('/role-select')} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
          <h2 className="text-2xl font-bold text-center flex-1 mr-[-36px] text-gray-900">بيانات التاجر</h2>
       </div>
       <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); if(isValid) onRegister(formData as UserProfile); }}>
@@ -370,7 +370,7 @@ const RegisterConsumer = ({ onRegister }: { onRegister: (data: UserProfile) => v
   return (
     <div className="min-h-screen bg-white p-6 pb-20 flex flex-col">
       <div className="flex items-center mb-6">
-         <button onClick={() => navigate(-1)} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
+         <button onClick={() => navigate('/role-select')} className="p-2 -mr-2"><ArrowRight className="text-gray-700 w-7 h-7" /></button>
          <h2 className="text-2xl font-bold text-center flex-1 mr-[-36px] text-gray-900">بيانات المستهلك</h2>
       </div>
       <div className="flex-1 flex flex-col justify-center -mt-10">
@@ -461,10 +461,18 @@ const Checkout = ({
   const delivery = 50;
   const total = 1550;
 
+  const handleBack = () => {
+      if (userRole === 'MERCHANT') {
+          navigate('/merchant/market');
+      } else {
+          navigate('/consumer/shop');
+      }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 flex flex-col">
        <div className="flex items-center mb-6">
-         <button onClick={() => navigate(-1)}><ArrowRight className="text-gray-700" /></button>
+         <button onClick={handleBack}><ArrowRight className="text-gray-700" /></button>
          <h1 className="text-xl font-bold flex-1 text-center mr-[-24px]">الدفع</h1>
        </div>
 
@@ -696,7 +704,7 @@ const MerchantOrders = () => {
     return (
         <div className="min-h-screen bg-gray-50 pb-24">
             <div className="bg-white p-4 shadow-sm flex items-center gap-2 sticky top-0 z-20">
-                <button onClick={() => navigate(-1)}><ArrowRight /></button>
+                <button onClick={() => navigate('/merchant/dashboard')}><ArrowRight /></button>
                 <h1 className="text-lg font-bold">طلبات العملاء</h1>
             </div>
             <div className="p-4 space-y-4">
@@ -806,7 +814,7 @@ const NotificationCenter = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <div className="bg-white p-6 shadow-sm flex items-center justify-between sticky top-0 z-30">
-        <button onClick={() => navigate(-1)}>
+        <button onClick={() => navigate('/merchant/dashboard')}>
            <ArrowRight className="w-6 h-6 text-green-800" />
         </button>
         <h1 className="text-xl font-bold text-gray-900">الإشعارات</h1>
@@ -896,7 +904,7 @@ const InvoicesPage = () => {
     <div className="min-h-screen bg-gray-50 pb-24">
       <div className="bg-green-50 p-6 rounded-b-3xl shadow-sm mb-6">
           <div className="flex items-center gap-2 mb-4">
-              <button onClick={() => navigate(-1)}><ArrowRight /></button>
+              <button onClick={() => navigate('/merchant/dashboard')}><ArrowRight /></button>
               <h1 className="text-2xl font-bold text-gray-900">الفواتير والحسابات</h1>
           </div>
         
